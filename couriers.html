@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Kuryerlar</title>
+</head>
+
+<body>
+
+<h2>Kuryer qo‘shish</h2>
+
+<form action="/add_courier" method="post">
+
+<input type="text" name="name" placeholder="Ismi" required>
+<br><br>
+
+<input type="text" name="phone" placeholder="Telefon" required>
+<br><br>
+
+<input type="text" name="region" placeholder="Hudud">
+<br><br>
+
+<input type="text" name="telegram_id" placeholder="Telegram ID" required>
+<br><br>
+
+<button type="submit">Qo‘shish</button>
+
+</form>
+
+<hr>
+
+<h2>Kuryerlar ro‘yxati</h2>
+
+<table border="1">
+
+<tr>
+<th>ID</th>
+<th>Ism</th>
+<th>Telefon</th>
+<th>Hudud</th>
+<th>Telegram ID</th>
+</tr>
+
+{% for c in couriers %}
+
+<tr>
+<td>{{c.id}}</td>
+<td>{{c.name}}</td>
+<td>{{c.phone}}</td>
+<td>{{c.region}}</td>
+<td>{{c.telegram_id}}</td>
+</tr>
+
+{% endfor %}
+
+</table>
+
+</body>
+</html>

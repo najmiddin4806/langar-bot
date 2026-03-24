@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+<title>Langar Water Admin</title>
+
+<link rel="stylesheet"
+href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+</head>
+
+<body style="background:#f4f6f9">
+
+<div class="container-fluid p-4">
+
+<h2 class="mb-4">Langar Water Admin Panel</h2>
+
+<!-- 🔷 STAT CARDS -->
+<div class="row">
+
+<div class="col-md-3">
+<div class="card text-white bg-primary mb-3">
+<div class="card-body">
+<h5>Jami buyurtmalar</h5>
+<h2>{{total}}</h2>
+</div>
+</div>
+</div>
+
+<div class="col-md-3">
+<div class="card text-white bg-warning mb-3">
+<div class="card-body">
+<h5>Yangi buyurtmalar</h5>
+<h2>{{new}}</h2>
+</div>
+</div>
+</div>
+
+<div class="col-md-3">
+<div class="card text-white bg-info mb-3">
+<div class="card-body">
+<h5>Jarayonda</h5>
+<h2>{{process}}</h2>
+</div>
+</div>
+</div>
+
+<div class="col-md-3">
+<div class="card text-white bg-success mb-3">
+<div class="card-body">
+<h5>Yetkazilgan</h5>
+<h2>{{done}}</h2>
+</div>
+</div>
+</div>
+
+</div>
+
+
+<!-- 📊 CHART -->
+<div class="card mt-4">
+
+<div class="card-header">
+Buyurtmalar statistikasi
+</div>
+
+<div class="card-body">
+<canvas id="chart"></canvas>
+</div>
+
+</div>
+
+
+<!-- 📦 NEW ORDERS TABLE -->
+<div class="card mt-4">
+
+<div class="card-header">
+Yangi buyurtmalar (so‘nggi 5 ta)
+</div>
+
+<div class="card-body">
+
+<table class="table table-bordered table-striped">
+
+<tr>
+<th>ID</th>
+<th>Mijoz</th>
+<th>Telefon</th>
+<th>Suv</th>
+<th>Hudud</th>
+</tr>
+
+{% for o in new_orders %}
+
+<tr>
+<td>{{o.order_id}}</td>
+<td>{{o.fish}}</td>
+<td>{{o.phone}}</td>
+<td>{{o.count}}</td>
+<td>{{o.region}}</td>
+</tr>
+
+{% endfor %}
+
+</table>
+
+<a href="/couriers" class="btn btn-primary">Kuryer qo'shish</a>
+<a href="/orders" class="btn btn-primary">So'ngi buyurtmalar</a>
+
+</div>
+
+</div>
+
+</div>
+
+
+<!-- 📊 CHART SCRIPT -->
+<script>
+
+var ctx = document.getElementById('chart');
+
+new Chart(ctx, {
+
+type: 'bar',
+
+data: {
+
+labels: ["Jami","Yangi","Jarayonda","Yetkazilgan"],
+
+datasets: [{
+label: "Buyurtmalar",
+data: [{{total}}, {{new}}, {{process}}, {{done}}]
+}]
+
+}
+
+});
+
+</script>
+
+
+<!-- 🔄 AUTO REFRESH -->
+<script>
+setTimeout(function(){
+ location.reload();
+},5000);
+</script>
+
+</body>
+</html>
