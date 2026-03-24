@@ -3,10 +3,18 @@ from database import get_db
 from models import create_tables
 import requests
 
+import asyncio
+import threading
+from aiogram import Bot, Dispatcher, types
+
 app = Flask(__name__)
 app.secret_key = "secret123"
 
 BOT_TOKEN = "8349824316:AAFUm18cQjiK2JFwpSwdOuHiPkUcd5Lm8OA"
+
+# --- BOT INIT ---
+bot = Bot(token=BOT_TOKEN)
+dp = Dispatcher()
 
 create_tables()
 
@@ -31,6 +39,17 @@ def create_admin():
 
 
 create_admin()
+
+
+# ---------------- BOT HANDLER ----------------
+
+@dp.message()
+async def start_handler(message: types.Message):
+    await message.answer("Langar bot ishlayapti ✅")
+
+
+def start_bot():
+    asyncio.run(dp.start_polling(bot))
 
 
 # ---------------- KURYERLAR ----------------
@@ -192,7 +211,7 @@ def send_order_to_courier(chat_id, order):
     keyboard = {
         "inline_keyboard": [
             [
-                {"text": "🟡 Jarayonda", "callback_data": f"done_{order['order_id']}"},
+                {"text": "🟡 Jarayonda", "callback_data": f"process_{order['order_id']}"},
                 {"text": "✅ Yetkazildi", "callback_data": f"done_{order['order_id']}"}
             ]
         ]
@@ -209,4 +228,6 @@ def send_order_to_courier(chat_id, order):
 
 # ---------------- RUN ----------------
 
-app.run(debug=True)
+if __name__ == "__main__":
+    threading.Thread(target=start_bot).start()
+    app.run(host="0.0.0.0", port=5000)
