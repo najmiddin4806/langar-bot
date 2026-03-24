@@ -2,3 +2,4 @@ flask
 aiogram
 requests
 python-telegram-bot==13.15
+imghdr
