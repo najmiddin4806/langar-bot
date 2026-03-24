@@ -49,7 +49,8 @@ async def start_handler(message: types.Message):
 
 
 def start_bot():
-    asyncio.run(dp.start_polling(bot))
+    # 🔥 MUHIM TUZATISH (thread xatosi uchun)
+    asyncio.run(dp.start_polling(bot, handle_signals=False))
 
 
 # ---------------- KURYERLAR ----------------
@@ -170,19 +171,16 @@ def assign():
     conn = get_db()
     cur = conn.cursor()
 
-    # status yangilash
     cur.execute(
     "UPDATE orders SET courier_id=?,status='process' WHERE order_id=?",
     (courier_id,order_id)
     )
 
-    # kuryerni olish
     courier = cur.execute(
         "SELECT * FROM couriers WHERE id=?",
         (courier_id,)
     ).fetchone()
 
-    # buyurtmani olish
     order = cur.execute(
         "SELECT * FROM orders WHERE order_id=?",
         (order_id,)
@@ -190,7 +188,6 @@ def assign():
 
     conn.commit()
 
-    # telegramga yuborish
     send_order_to_courier(courier["telegram_id"], order)
 
     return redirect("/orders")
