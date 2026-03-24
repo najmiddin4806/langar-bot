@@ -7,89 +7,79 @@ from flask import Flask
 
 app = Flask(__name__)
 
-# 🔐 vaqtincha TOKEN (keyin env ga qaytaramiz)
+# ❗ test uchun to‘g‘ridan-to‘g‘ri token
 TOKEN = "8349824316:AAFUm18cQjiK2JFwpSwdOuHiPkUcd5Lm8OA"
 
-# ---------------- BOT ----------------
+# ---------------- STATE ----------------
+(MENU, COUNT) = range(2)
 
-(LANG,FISH,PHONE,EXTRA_PHONE,ADD_PHONE,LOCATION,ADDRESS,
- REGION_REGISTER,REGISTER_CONFIRM,MENU,COUNT,CONFIRM) = range(12)
-
-DB_NAME = "water_bot.db"
-
-conn = sqlite3.connect(DB_NAME, check_same_thread=False)
+# ---------------- DB ----------------
+conn = sqlite3.connect("water_bot.db", check_same_thread=False)
 cursor = conn.cursor()
 
-cursor.execute("""CREATE TABLE IF NOT EXISTS users(
-user_id INTEGER,lang TEXT,fish TEXT,phone TEXT,
-extra_phone TEXT,location TEXT,house TEXT,region TEXT)""")
-
-cursor.execute("""CREATE TABLE IF NOT EXISTS orders(
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS orders(
 order_id INTEGER PRIMARY KEY AUTOINCREMENT,
-user_id INTEGER,region TEXT,count INTEGER,
-price INTEGER,status TEXT DEFAULT 'new',date TEXT)""")
-
+count INTEGER
+)
+""")
 conn.commit()
 
-
 # ---------------- MENU ----------------
-
 def main_menu():
     return ReplyKeyboardMarkup([
-        ["🆔 ID raqam","📜 Buyurtmalar tarixi"],
-        ["📦 Bo‘sh baklashkalar","🎁 Bonuslar"],
-        ["🛒 Yangi buyurtma berish"]
+        ["🛒 Yangi buyurtma berish"],
+        ["📜 Buyurtmalar tarixi"]
     ], resize_keyboard=True)
 
-
 # ---------------- HANDLERS ----------------
-
 def start(update, context):
     update.message.reply_text("Asosiy menyu", reply_markup=main_menu())
     return MENU
-
 
 def menu_handler(update, context):
     text = update.message.text
 
     if text == "🛒 Yangi buyurtma berish":
-        update.message.reply_text(
-            "Suv miqdorini tanlang",
-            reply_markup=ReplyKeyboardMarkup([["2","3","4","5"]], resize_keyboard=True)
-        )
+        update.message.reply_text("Nechta suv kerak? (2-5)")
         return COUNT
 
     elif text == "📜 Buyurtmalar tarixi":
-        update.message.reply_text("📜 Hozircha bo‘sh")
+        rows = cursor.execute("SELECT * FROM orders").fetchall()
+        if not rows:
+            update.message.reply_text("Buyurtmalar yo‘q ❗")
+        else:
+            text = "📜 Buyurtmalar:\n"
+            for r in rows:
+                text += f"{r[0]}-ID | {r[1]} ta\n"
+            update.message.reply_text(text)
         return MENU
 
     return MENU
 
-
 def count(update, context):
     try:
-        count = int(update.message.text)
+        c = int(update.message.text)
     except:
-        update.message.reply_text("Iltimos son kiriting ❗")
+        update.message.reply_text("Son kiriting ❗")
         return COUNT
 
-    context.user_data["count"] = count
+    cursor.execute("INSERT INTO orders(count) VALUES(?)", (c,))
+    conn.commit()
 
-    update.message.reply_text(
-        f"{count} ta suv buyurtma qilindi ✅",
-        reply_markup=main_menu()
-    )
-
+    update.message.reply_text(f"{c} ta buyurtma saqlandi ✅", reply_markup=main_menu())
     return MENU
 
-
-# ---------------- BOT RUN ----------------
-
+# ---------------- BOT ----------------
 def run_bot():
     try:
         print("Bot starting...")
 
         updater = Updater(TOKEN, use_context=True)
+
+        # ❗ MUHIM: eski update’larni tozalash (conflict bo‘lmasin)
+        updater.bot.delete_webhook(drop_pending_updates=True)
+
         dp = updater.dispatcher
 
         conv = ConversationHandler(
@@ -103,24 +93,20 @@ def run_bot():
 
         dp.add_handler(conv)
 
-        updater.start_polling()
+        # ❗ signal muammosi uchun
+        updater.start_polling(drop_pending_updates=True)
         updater.idle()
 
     except Exception as e:
         print("BOT ERROR:", e)
 
-
 # ---------------- FLASK ----------------
-
 @app.route("/")
 def home():
     return "Admin panel ishlayapti ✅"
 
-
 # ---------------- RUN ----------------
-
 if __name__ == "__main__":
-    # botni alohida threadda ishga tushiramiz
     threading.Thread(target=run_bot, daemon=True).start()
 
     port = int(os.environ.get("PORT", 5000))
