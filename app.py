@@ -1,31 +1,19 @@
 import sqlite3
-from telegram import *
-from telegram.ext import *
+from telegram import ReplyKeyboardMarkup
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, ConversationHandler
 import os
 import threading
 from flask import Flask
 
 app = Flask(__name__)
 
+# 🔐 vaqtincha TOKEN (keyin env ga qaytaramiz)
 TOKEN = "8349824316:AAFUm18cQjiK2JFwpSwdOuHiPkUcd5Lm8OA"
 
 # ---------------- BOT ----------------
 
-(
-LANG,FISH,PHONE,EXTRA_PHONE,ADD_PHONE,LOCATION,ADDRESS,
-REGION_REGISTER,REGISTER_CONFIRM,MENU,COUNT,CONFIRM
-)=range(12)
-
-prices = {
-"Navoiy (Navoiy shahar)":13000,
-"Navoiy (Xatirchi markaz)":11000,
-"Navoiy (Xatirchi Lenin)":12000,
-"Samarqand (Ishtixon Metan Kattaqorgon)":14000,
-"Samarqand (Narpay Mirbozor Oqtosh)":13000,
-"Toshkent":23000
-}
-
-regions=list(prices.keys())
+(LANG,FISH,PHONE,EXTRA_PHONE,ADD_PHONE,LOCATION,ADDRESS,
+ REGION_REGISTER,REGISTER_CONFIRM,MENU,COUNT,CONFIRM) = range(12)
 
 DB_NAME = "water_bot.db"
 
@@ -44,38 +32,48 @@ price INTEGER,status TEXT DEFAULT 'new',date TEXT)""")
 conn.commit()
 
 
+# ---------------- MENU ----------------
+
 def main_menu():
     return ReplyKeyboardMarkup([
         ["🆔 ID raqam","📜 Buyurtmalar tarixi"],
         ["📦 Bo‘sh baklashkalar","🎁 Bonuslar"],
         ["🛒 Yangi buyurtma berish"]
-    ],resize_keyboard=True)
+    ], resize_keyboard=True)
 
 
-def start(update,context):
-    update.message.reply_text("Asosiy menyu",reply_markup=main_menu())
+# ---------------- HANDLERS ----------------
+
+def start(update, context):
+    update.message.reply_text("Asosiy menyu", reply_markup=main_menu())
     return MENU
 
 
-def menu_handler(update,context):
-    text=update.message.text
+def menu_handler(update, context):
+    text = update.message.text
 
-    if text=="🛒 Yangi buyurtma berish":
+    if text == "🛒 Yangi buyurtma berish":
         update.message.reply_text(
             "Suv miqdorini tanlang",
-            reply_markup=ReplyKeyboardMarkup([["2","3","4","5"]],resize_keyboard=True)
+            reply_markup=ReplyKeyboardMarkup([["2","3","4","5"]], resize_keyboard=True)
         )
         return COUNT
 
+    elif text == "📜 Buyurtmalar tarixi":
+        update.message.reply_text("📜 Hozircha bo‘sh")
+        return MENU
+
     return MENU
 
 
-def count(update,context):
-    count=int(update.message.text)
-    price=13000
-    total=count*price
+def count(update, context):
+    try:
+        count = int(update.message.text)
+    except:
+        update.message.reply_text("Iltimos son kiriting ❗")
+        return COUNT
 
-    context.user_data["count"]=count
+    context.user_data["count"] = count
 
     update.message.reply_text(
         f"{count} ta suv buyurtma qilindi ✅",
@@ -85,23 +83,31 @@ def count(update,context):
     return MENU
 
 
+# ---------------- BOT RUN ----------------
+
 def run_bot():
-    updater=Updater(TOKEN,use_context=True)
-    dp=updater.dispatcher
+    try:
+        print("Bot starting...")
 
-    conv=ConversationHandler(
-        entry_points=[CommandHandler("start",start)],
-        states={
-            MENU:[MessageHandler(Filters.text,menu_handler)],
-            COUNT:[MessageHandler(Filters.text,count)],
-        },
-        fallbacks=[CommandHandler("start",start)]
-    )
+        updater = Updater(TOKEN, use_context=True)
+        dp = updater.dispatcher
 
-    dp.add_handler(conv)
+        conv = ConversationHandler(
+            entry_points=[CommandHandler("start", start)],
+            states={
+                MENU: [MessageHandler(Filters.text, menu_handler)],
+                COUNT: [MessageHandler(Filters.text, count)],
+            },
+            fallbacks=[CommandHandler("start", start)]
+        )
 
-    updater.start_polling()
-    updater.idle()
+        dp.add_handler(conv)
+
+        updater.start_polling()
+        updater.idle()
+
+    except Exception as e:
+        print("BOT ERROR:", e)
 
 
 # ---------------- FLASK ----------------
@@ -113,8 +119,11 @@ def home():
 
 # ---------------- RUN ----------------
 
-if __name__=="__main__":
-    threading.Thread(target=run_bot).start()
+if __name__ == "__main__":
+    # botni alohida threadda ishga tushiramiz
+    threading.Thread(target=run_bot, daemon=True).start()
 
-    port=int(os.environ.get("PORT",5000))
-    app.run(host="0.0.0.0",port=port)
+    port = int(os.environ.get("PORT", 5000))
+    print("Flask starting on port:", port)
+
+    app.run(host="0.0.0.0", port=port)
