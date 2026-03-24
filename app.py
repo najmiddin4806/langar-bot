@@ -7,7 +7,7 @@ from flask import Flask
 
 app = Flask(__name__)
 
-TOKEN = os.getenv("8349824316:AAFUm18cQjiK2JFwpSwdOuHiPkUcd5Lm8OA")
+TOKEN = "8349824316:AAFUm18cQjiK2JFwpSwdOuHiPkUcd5Lm8OA"
 
 # ---------------- BOT ----------------
 
